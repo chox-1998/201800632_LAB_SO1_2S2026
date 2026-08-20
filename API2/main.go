@@ -11,6 +11,9 @@ const (
 	port   = ":8082"
 	vm     = 1
 	carnet = "201800632"
+
+	api1URL = "http://192.168.100.3:8081/health"
+	api3URL = "http://192.168.100.4:8083/health"
 )
 
 type HealthResponse struct {
@@ -28,6 +31,32 @@ type CallResponse struct {
 	Carnet     string `json:"carnet"`
 }
 
+func checkAPIHealth(url string) bool {
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return false
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return false
+	}
+
+	var health HealthResponse
+
+	err = json.NewDecoder(resp.Body).Decode(&health)
+	if err != nil {
+		return false
+	}
+
+	return health.Status == "UP"
+}
+
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	response := HealthResponse{
 		Status:    "UP",
@@ -42,11 +71,24 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func callAPI1Handler(w http.ResponseWriter, r *http.Request) {
-	response := CallResponse{
-		APIName:    "API1",
-		Message:    "API1 located on VM1",
-		Connection: false,
-		Carnet:     carnet,
+	connection := checkAPIHealth(api1URL)
+
+	var response CallResponse
+
+	if connection {
+		response = CallResponse{
+			APIName:    "API1",
+			Message:    "The API1 located on the VM1 is working",
+			Connection: true,
+			Carnet:     carnet,
+		}
+	} else {
+		response = CallResponse{
+			APIName:    "API1",
+			Message:    "ERROR: The API1 located on the VM1 is not working",
+			Connection: false,
+			Carnet:     carnet,
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -54,11 +96,24 @@ func callAPI1Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func callAPI3Handler(w http.ResponseWriter, r *http.Request) {
-	response := CallResponse{
-		APIName:    "API3",
-		Message:    "API3 located on VM2",
-		Connection: false,
-		Carnet:     carnet,
+	connection := checkAPIHealth(api3URL)
+
+	var response CallResponse
+
+	if connection {
+		response = CallResponse{
+			APIName:    "API3",
+			Message:    "The API3 located on the VM2 is working",
+			Connection: true,
+			Carnet:     carnet,
+		}
+	} else {
+		response = CallResponse{
+			APIName:    "API3",
+			Message:    "ERROR: The API3 located on the VM2 is not working",
+			Connection: false,
+			Carnet:     carnet,
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

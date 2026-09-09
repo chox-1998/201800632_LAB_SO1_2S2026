@@ -1,0 +1,39 @@
+version: "3.8"
+services:
+  valkey:
+    image: valkey/valkey:latest
+    container_name: valkey_so1
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    networks:
+      - so1_net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana_so1
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_INSTALL_PLUGINS=redis-datasource
+      - GF_SERVER_HTTP_ADDR=0.0.0.0
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - so1_net
+    depends_on:
+      - valkey
+
+volumes:
+  valkey_data:
+  grafana_data:
+
+networks:
+  so1_net:
+    driver: bridge

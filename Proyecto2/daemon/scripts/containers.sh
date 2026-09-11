@@ -32,7 +32,7 @@ launch_container() {
     esac
 }
 
-for i in $(seq 1 5); do
+for i in $(seq 1 10); do
     launch_container
 done
 

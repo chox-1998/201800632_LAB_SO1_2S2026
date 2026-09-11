@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	ProcFile = "/proc/continfo_pr1_so1_201800632"
+	ProcFile = "/proc/continfo_pr2_so1_201800632"
 
 	LoopInterval      = 20 * time.Second
 	ValkeyAddr        = "localhost:6379"
@@ -258,6 +258,11 @@ func readProcFile() (*ProcData, error) {
 	}
 
 	return &proc, nil
+}
+
+//eBPF container
+func startEBPF(){
+	
 }
 
 // buildContainerList cruza los datos de docker ps con los del módulo de kernel
@@ -499,12 +504,8 @@ func main() {
 	// 3. Código o función para instalar los módulos de kernel
 	loadKernelModule()
 
-	// 4. eBPF: Cargar el módulo de kernel y verificar que /proc/continfo_pr1_so1_201800632 exista
-	if _, err := os.Stat(ProcFile); os.IsNotExist(err) {
-		log.Fatalf("[Kernel] Módulo de kernel no cargado o /proc no disponible: %v", err)
-	} else {
-		log.Printf("[Kernel] Módulo de kernel cargado correctamente, /proc disponible.")
-	}
+	// 4. eBPF: Cargar el Dockerfile de EBPF, compilar y cargar; Y monitorear la información del eBPF
+
 
 	// 5. Loop de lectura de los archivos de /proc
 	ticker := time.NewTicker(LoopInterval)

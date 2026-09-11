@@ -20,7 +20,7 @@ MODULE_DESCRIPTION("Modulo de kernel para telemetria de contenedores - SO1");
 MODULE_VERSION("1.0");
 
 
-#define PROC_FILENAME "continfo_pr1_so1_201800632"
+#define PROC_FILENAME "continfo_pr2_so1_201800632"
 
 static struct proc_dir_entry *proc_entry;
 

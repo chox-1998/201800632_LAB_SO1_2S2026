@@ -101,7 +101,7 @@ func runCmd(name string, args ...string) (string, error) {
 
 // getRunningContainers devuelve lista de IDs de contenedores activos
 func getRunningContainers() ([]string, error) {
-	out, err := runCmd("docker", "ps", "-q")
+	out, err := runCmd("sudo","docker", "ps", "-q")
 	if err != nil {
 		return nil, fmt.Errorf("docker ps falló: %w", err)
 	}
@@ -113,7 +113,7 @@ func getRunningContainers() ([]string, error) {
 
 // getContainerLabel obtiene el label "tipo" de un contenedor
 func getContainerLabel(containerID string) string {
-	out, err := runCmd("docker", "inspect",
+	out, err := runCmd("sudo","docker", "inspect",
 		"--format", "{{index .Config.Labels \"tipo\"}}", containerID)
 	if err != nil {
 		return "desconocido"
@@ -137,7 +137,7 @@ func getContainerName(containerID string) string {
 
 // getContainerPID obtiene el PID del proceso principal de un contenedor
 func getContainerPID(containerID string) int {
-	out, err := runCmd("docker", "inspect",
+	out, err := runCmd("sudo","docker", "inspect",
 		"--format", "{{.State.Pid}}", containerID)
 	if err != nil {
 		return 0
@@ -149,10 +149,10 @@ func getContainerPID(containerID string) int {
 // killContainer detiene y elimina un contenedor
 func killContainer(containerID string) error {
 	log.Printf("[Docker] Eliminando contenedor %s ...", containerID)
-	if _, err := runCmd("docker", "stop", containerID); err != nil {
+	if _, err := runCmd("sudo","docker", "stop", containerID); err != nil {
 		return fmt.Errorf("docker stop %s: %w", containerID, err)
 	}
-	if _, err := runCmd("docker", "rm", "-f", containerID); err != nil {
+	if _, err := runCmd("sudo","docker", "rm", "-f", containerID); err != nil {
 		// No es fatal si ya se eliminó solo (--rm flag)
 		log.Printf("[Docker] rm ignorado para %s: %v", containerID, err)
 	}
@@ -164,9 +164,14 @@ func killContainer(containerID string) error {
 func startGrafanaAndValkey() {
 	log.Println("[Init] Levantando Grafana y Valkey...")
 
+	bout, berr := runCmd("sudo","docker", "compose", "up", "-d")
+	if berr != nil || bout == ""{
+		log.Printf("[Init] Error iniciando docker-compose: %v", berr)
+	}
+
 	out, err := runCmd("docker", "ps", "-q", "-f", "name=grafana_so1")
 	if err != nil || out == "" {
-		_, err := runCmd("docker-compose", "-f",
+		_, err := runCmd("sudo","docker-compose", "-f",
 			filepath.Join(".", "docker-compose.yml"), "up", "-d")
 		if err != nil {
 			log.Printf("[Init] Error iniciando docker-compose: %v", err)

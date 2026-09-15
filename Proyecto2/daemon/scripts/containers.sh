@@ -36,4 +36,4 @@ for i in $(seq 1 10); do
     launch_container
 done
 
-echo "[containers] Listo — 5 contenedores creados."
+echo "[containers] 10 contenedores creados."

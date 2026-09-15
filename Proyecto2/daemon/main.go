@@ -262,7 +262,27 @@ func readProcFile() (*ProcData, error) {
 
 //eBPF container
 func startEBPF(){
-	
+	log.Println("[Init] Levantando el módulo eBPF...")
+	// Ve al directorio del módulo eBPF y compílalo
+	ebpfDir := "./ebpf"
+	cmd := exec.Command("make", "-C", ebpfDir)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Printf("[eBPF] Error compilando módulo: %v", err)
+		return
+	}
+
+	// Cargar el módulo eBPF (suponiendo que el binario se llama ebpf_module.o)
+	cmd = exec.Command("sudo", "insmod", filepath.Join(ebpfDir, "ebpf_module.o"))
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Printf("[eBPF] Error cargando módulo: %v", err)
+		return
+	}
+
+	log.Println("[eBPF] Módulo eBPF cargado exitosamente.")
 }
 
 // buildContainerList cruza los datos de docker ps con los del módulo de kernel

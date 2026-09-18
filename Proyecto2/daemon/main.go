@@ -530,7 +530,7 @@ func main() {
 	loadKernelModule()
 
 	// 4. eBPF: Cargar el Dockerfile de EBPF, compilar y cargar; Y monitorear la información del eBPF
-
+	
 
 	// 5. Loop de lectura de los archivos de /proc
 	ticker := time.NewTicker(LoopInterval)

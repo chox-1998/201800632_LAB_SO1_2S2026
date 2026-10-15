@@ -45,3 +45,29 @@ kubectl -n munk8s get pods -w
 
 
 **Nota: Verificar los datos de Locust**
+
+# Fase 2 
+
+RabitMQ
+```Powershell
+docker pull rabbitmq:3.13-management
+docker tag rabbitmq:3.13-management localhost:5000/munk8s/rabbitmq:3.13-management
+docker push localhost:5000/munk8s/rabbitmq:3.13-management
+```
+
+Construir las nuevas imagenes
+```Powershell
+$REG = "localhost:5000/munk8s"
+docker build -t "$REG/go-grpc-server:v1"  -f go-deployment2/Dockerfile.server go-deployment2
+docker build -t "$REG/go-rabbit-writer:v1" -f go-deployment2/Dockerfile.writer go-deployment2
+docker build -t "$REG/go-grpc-client:v2"  -f go-deployment1/Dockerfile.grpcclient go-deployment1
+"go-grpc-server:v1","go-rabbit-writer:v1","go-grpc-client:v2" | ForEach-Object { docker push "$REG/$_" }
+```
+Manifiestos
+```Powershell
+kubectl apply -f k8s/40-rabbitmq.yaml
+kubectl -n munk8s rollout status statefulset/rabbitmq --timeout=180s
+kubectl apply -f k8s/50-go-deployment2.yaml
+kubectl apply -f k8s/20-go-deployment1.yaml
+kubectl -n munk8s get pods
+```

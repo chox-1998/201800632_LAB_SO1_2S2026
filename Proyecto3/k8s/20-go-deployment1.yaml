@@ -18,10 +18,9 @@ spec:
             limits:   { cpu: 500m, memory: 256Mi }
           readinessProbe: { httpGet: { path: /health, port: 8081 }, periodSeconds: 5 }
         - name: grpc-client
-          image: zot.local:5000/munk8s/go-grpc-client:v1
+          image: zot.local:5000/munk8s/go-grpc-client:v2
           env:
-            # Fase 2: "go-grpc-server:50051". Vacio = modo stub.
-            - { name: GRPC_SERVER_ADDR, value: "" }
+            - { name: GRPC_SERVER_ADDR, value: "go-grpc-server:50051" }
           resources:
             requests: { cpu: 100m, memory: 64Mi }
             limits:   { cpu: 500m, memory: 256Mi }

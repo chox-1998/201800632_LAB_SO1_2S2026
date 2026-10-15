@@ -1,6 +1,6 @@
 // Container 2 del Go Deployment 1: cliente gRPC.
 // Expone HTTP solo en localhost:8082 y llama WarReportService.SendReport.
-// Si GRPC_SERVER_ADDR esta vacio -> modo stub (Fase 1, aun no existe el server).
+// Si GRPC_SERVER_ADDR esta vacio -> modo stub.
 package main
 
 import (
@@ -18,6 +18,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+const serviceConfig = `{"loadBalancingConfig":[{"round_robin":{}}]}`
+
 type report struct {
 	Country         string `json:"country"`
 	WarplanesInAir  int32  `json:"warplanes_in_air"`
@@ -34,13 +36,16 @@ func writeJSON(w http.ResponseWriter, code int, body string) {
 func main() {
 	var client pb.WarReportServiceClient
 	if addr := os.Getenv("GRPC_SERVER_ADDR"); addr != "" {
-		conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		// Service headless + dns:/// + round_robin => reparte entre replicas del server.
+		conn, err := grpc.NewClient("dns:///"+addr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithDefaultServiceConfig(serviceConfig))
 		if err != nil {
 			log.Fatalf("grpc dial: %v", err)
 		}
 		defer conn.Close()
 		client = pb.NewWarReportServiceClient(conn)
-		log.Printf("gRPC client -> %s", addr)
+		log.Printf("gRPC client -> %s (round_robin)", addr)
 	} else {
 		log.Println("GRPC_SERVER_ADDR vacio: modo STUB")
 	}

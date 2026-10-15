@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: go-deployment2, namespace: munk8s }
+spec:
+  replicas: 1   # Pruebas de rendimiento: 1 y 2
+  selector: { matchLabels: { app: go-deployment2 } }
+  template:
+    metadata: { labels: { app: go-deployment2 } }
+    spec:
+      containers:
+        - name: grpc-server
+          image: zot.local:5000/munk8s/go-grpc-server:v1
+          ports: [{ containerPort: 50051 }]
+          env:
+            - { name: WRITER_URL, value: "http://localhost:8083/publish" }
+          resources:
+            requests: { cpu: 100m, memory: 64Mi }
+            limits:   { cpu: 500m, memory: 256Mi }
+          readinessProbe: { tcpSocket: { port: 50051 }, periodSeconds: 5 }
+        - name: rabbitmq-writer
+          image: zot.local:5000/munk8s/go-rabbit-writer:v1
+          env:
+            - { name: RABBITMQ_HOST, value: rabbitmq }
+            - { name: POOL_SIZE, value: "8" }
+            - name: RABBITMQ_USER
+              valueFrom: { secretKeyRef: { name: rabbitmq-credentials, key: username } }
+            - name: RABBITMQ_PASS
+              valueFrom: { secretKeyRef: { name: rabbitmq-credentials, key: password } }
+          resources:
+            requests: { cpu: 100m, memory: 64Mi }
+            limits:   { cpu: 500m, memory: 256Mi }
+          readinessProbe: { httpGet: { path: /health, port: 8083 }, periodSeconds: 5 }
+---
+# Headless: el cliente gRPC resuelve todas las IPs de los pods (round_robin).
+apiVersion: v1
+kind: Service
+metadata: { name: go-grpc-server, namespace: munk8s }
+spec:
+  clusterIP: None
+  selector: { app: go-deployment2 }
+  ports: [{ port: 50051, targetPort: 50051 }]

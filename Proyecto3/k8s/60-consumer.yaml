@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: rabbit-consumer, namespace: munk8s }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: rabbit-consumer } }
+  template:
+    metadata: { labels: { app: rabbit-consumer } }
+    spec:
+      containers:
+        - name: consumer
+          image: zot.local:5000/munk8s/go-consumer:v1
+          env:
+            - { name: VALKEY_ADDR, value: "valkey:6379" }
+            - { name: RABBITMQ_HOST, value: rabbitmq }
+            - { name: WORKERS, value: "8" }
+            - { name: PREFETCH, value: "50" }
+            - name: RABBITMQ_USER
+              valueFrom: { secretKeyRef: { name: rabbitmq-credentials, key: username } }
+            - name: RABBITMQ_PASS
+              valueFrom: { secretKeyRef: { name: rabbitmq-credentials, key: password } }
+          resources:
+            requests: { cpu: 100m, memory: 64Mi }
+            limits:   { cpu: 500m, memory: 256Mi }

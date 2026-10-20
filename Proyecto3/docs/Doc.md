@@ -70,4 +70,4 @@ kubectl -n munk8s rollout status statefulset/rabbitmq --timeout=180s
 kubectl apply -f k8s/50-go-deployment2.yaml
 kubectl apply -f k8s/20-go-deployment1.yaml
 kubectl -n munk8s get pods
-```
+```kubectl -n munk8s exec rabbitmq-0 -- rabbitmqctl list_queues name messages

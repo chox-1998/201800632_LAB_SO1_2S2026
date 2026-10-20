@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: munk8s-operator, namespace: munk8s-operator }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: munk8s-operator } }
+  template:
+    metadata: { labels: { app: munk8s-operator } }
+    spec:
+      serviceAccountName: munk8s-operator
+      containers:
+        - name: manager
+          image: zot.local:5000/munk8s/munk8s-operator:v1
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }

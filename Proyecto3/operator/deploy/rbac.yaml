@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Namespace
+metadata: { name: munk8s-operator }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: munk8s-operator, namespace: munk8s-operator }
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata: { name: munk8s-operator }
+rules:
+  # Nuestros Custom Resources (y Grafana en Fase 4)
+  - apiGroups: ["cache.munk8s.io", "viz.munk8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  # Recursos que crean los Helm charts
+  - apiGroups: ["apps"]
+    resources: ["statefulsets", "deployments"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["services", "persistentvolumeclaims", "configmaps", "serviceaccounts"]
+    verbs: ["*"]
+  # Helm guarda el estado de cada release en Secrets
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata: { name: munk8s-operator }
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: munk8s-operator
+subjects:
+  - { kind: ServiceAccount, name: munk8s-operator, namespace: munk8s-operator }

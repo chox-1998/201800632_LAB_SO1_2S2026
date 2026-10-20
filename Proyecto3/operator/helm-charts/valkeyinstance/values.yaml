@@ -1,0 +1,19 @@
+image:
+  repository: zot.local:5000/munk8s/valkey
+  tag: "8"
+  pullPolicy: IfNotPresent
+
+# Persistencia (AOF en /data sobre PVC)
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
+
+# Control de memoria. volatile-lru solo expulsa claves con TTL:
+# los agregados del dashboard nunca se pierden por presion de memoria.
+maxmemory: 256mb
+maxmemoryPolicy: volatile-lru
+
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits:   { cpu: 500m, memory: 384Mi }

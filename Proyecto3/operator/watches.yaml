@@ -1,0 +1,6 @@
+# Cada entrada asocia un Kind (CRD) con un Helm chart.
+- group: cache.munk8s.io
+  version: v1alpha1
+  kind: ValkeyInstance
+  chart: helm-charts/valkeyinstance
+# Fase 4: se agrega GrafanaInstance aqui.

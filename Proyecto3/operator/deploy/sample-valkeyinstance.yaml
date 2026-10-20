@@ -1,0 +1,11 @@
+apiVersion: cache.munk8s.io/v1alpha1
+kind: ValkeyInstance
+metadata:
+  name: valkey          # = nombre del Service que usa el consumer
+  namespace: munk8s
+spec:
+  persistence:
+    enabled: true
+    size: 1Gi
+  maxmemory: 256mb
+  maxmemoryPolicy: volatile-lru

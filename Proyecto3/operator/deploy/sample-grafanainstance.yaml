@@ -1,0 +1,11 @@
+apiVersion: viz.munk8s.io/v1alpha1
+kind: GrafanaInstance
+metadata:
+  name: grafana
+  namespace: munk8s
+spec:
+  admin:
+    user: admin
+    password: cambia-esta-clave
+  valkey:
+    address: valkey:6379

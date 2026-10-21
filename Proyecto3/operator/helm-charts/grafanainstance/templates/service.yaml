@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "grafanainstance.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "grafanainstance.selector" . | nindent 4 }}
+  ports:
+    - { name: http, port: 3000, targetPort: 3000 }

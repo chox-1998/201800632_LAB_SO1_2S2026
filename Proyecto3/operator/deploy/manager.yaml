@@ -10,7 +10,9 @@ spec:
       serviceAccountName: munk8s-operator
       containers:
         - name: manager
-          image: zot.local:5000/munk8s/munk8s-operator:v1
+          image: zot.local:5000/munk8s/munk8s-operator:v4
           resources:
             requests: { cpu: 100m, memory: 128Mi }
             limits:   { cpu: 500m, memory: 512Mi }
+
+

@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "grafanainstance.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "grafanainstance.selector" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "grafanainstance.labels" . | nindent 8 }}
+      annotations:
+        checksum/datasource: {{ include (print $.Template.BasePath "/configmap-datasource.yaml") . | sha256sum }}
+        checksum/dashboards: {{ include (print $.Template.BasePath "/configmap-dashboards.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: grafana
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - { name: http, containerPort: 3000 }
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom: { secretKeyRef: { name: {{ .Release.Name }}-admin, key: admin-user } }
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ .Release.Name }}-admin, key: admin-password } }
+            - { name: GF_USERS_ALLOW_SIGN_UP, value: "false" }
+            - { name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH, value: /var/lib/grafana/dashboards/munk8s.json }
+          readinessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - { name: datasources, mountPath: /etc/grafana/provisioning/datasources }
+            - { name: provider,    mountPath: /etc/grafana/provisioning/dashboards }
+            - { name: dashboards,  mountPath: /var/lib/grafana/dashboards }
+      volumes:
+        - name: datasources
+          configMap: { name: {{ .Release.Name }}-datasources }
+        - name: provider
+          configMap: { name: {{ .Release.Name }}-dashboard-provider }
+        - name: dashboards
+          configMap: { name: {{ .Release.Name }}-dashboards }

@@ -1,0 +1,16 @@
+image:
+  repository: zot.local:5000/munk8s/grafana-valkey
+  tag: v1
+  pullPolicy: IfNotPresent
+
+admin:
+  user: admin
+  password: admin
+
+# Direccion del Service de Valkey (el que crea ValkeyInstance)
+valkey:
+  address: valkey:6379
+
+resources:
+  requests: { cpu: 100m, memory: 192Mi }
+  limits:   { cpu: 500m, memory: 512Mi }

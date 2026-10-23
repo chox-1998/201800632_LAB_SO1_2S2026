@@ -1,0 +1,17 @@
+- rule: Lectura de archivo sensible en pods de MUNK8S
+  desc: >
+    Detecta la apertura o lectura de /etc/shadow o del directorio /app/secretos
+    dentro de contenedores de la API REST en Rust o de los servicios en Go.
+  condition: >
+    evt.type in (open, openat, openat2) and evt.dir=<
+    and evt.is_open_read=true and fd.num>=0
+    and container.id != host
+    and (fd.name = /etc/shadow or fd.name startswith /app/secretos)
+    and container.image contains "munk8s/"
+    and (container.image contains "/rust-api" or container.image contains "/go-")
+  output: >
+    ALERTA MUNK8S: lectura de archivo sensible
+    (file=%fd.name user=%user.name proc=%proc.cmdline pod=%k8s.pod.name
+    ns=%k8s.ns.name container=%container.name image=%container.image)
+  priority: WARNING
+  tags: [munk8s, filesystem, sensitive]

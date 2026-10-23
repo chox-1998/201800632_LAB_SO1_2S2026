@@ -9,10 +9,11 @@ spec:
     spec:
       containers:
         - name: rust-api
-          image: zot.local:5000/munk8s/rust-api:v1
+          image: zot.local:5000/munk8s/rust-api:v2
           ports: [{ containerPort: 8080 }]
           env:
             - { name: GO_URL, value: "http://go-deployment1:8081/report" }
+            - { name: DAPR_URL, value: "http://dapr-publisher:8090/publish" }
           resources:
             requests: { cpu: 100m, memory: 64Mi }
             limits:   { cpu: 500m, memory: 256Mi }

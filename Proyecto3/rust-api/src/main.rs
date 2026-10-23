@@ -21,23 +21,27 @@ struct Report {
 struct AppState {
     client: reqwest::Client,
     go_url: String,
+    dapr_url: String,
 }
 
 #[tokio::main]
 async fn main() {
     let go_url = std::env::var("GO_URL")
         .unwrap_or_else(|_| "http://go-deployment1:8081/report".to_string());
+    let dapr_url = std::env::var("DAPR_URL")
+        .unwrap_or_else(|_| "http://dapr-publisher:8090/publish".to_string());
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
         .pool_max_idle_per_host(100)
         .build()
         .unwrap();
-    let state = Arc::new(AppState { client, go_url });
+    let state = Arc::new(AppState { client, go_url, dapr_url });
 
     let app = Router::new()
         .route("/health", get(|| async { "ok" }))
-        // El Gateway reescribe /grpc-201800632 -> /
-        .route("/", post(handle_report))
+        // Gateway: /grpc-201800632 -> "/"   |   /dapr-201800632 -> "/dapr"
+        .route("/", post(handle_grpc))
+        .route("/dapr", post(handle_dapr))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
@@ -60,14 +64,8 @@ fn validate(r: &Report) -> Result<(), String> {
         .map_err(|_| "timestamp no es RFC3339".to_string())
 }
 
-async fn handle_report(
-    State(st): State<Arc<AppState>>,
-    Json(report): Json<Report>,
-) -> (StatusCode, Json<Value>) {
-    if let Err(e) = validate(&report) {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": e })));
-    }
-    match st.client.post(&st.go_url).json(&report).send().await {
+async fn forward(st: &AppState, url: &str, report: &Report) -> (StatusCode, Json<Value>) {
+    match st.client.post(url).json(report).send().await {
         Ok(resp) => {
             let code = StatusCode::from_u16(resp.status().as_u16())
                 .unwrap_or(StatusCode::BAD_GATEWAY);
@@ -75,7 +73,27 @@ async fn handle_report(
         }
         Err(e) => (
             StatusCode::BAD_GATEWAY,
-            Json(json!({ "error": format!("go-deployment1 no responde: {e}") })),
+            Json(json!({ "error": format!("upstream no responde: {e}") })),
         ),
     }
+}
+
+async fn handle_grpc(
+    State(st): State<Arc<AppState>>,
+    Json(report): Json<Report>,
+) -> (StatusCode, Json<Value>) {
+    if let Err(e) = validate(&report) {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": e })));
+    }
+    forward(&st, &st.go_url, &report).await
+}
+
+async fn handle_dapr(
+    State(st): State<Arc<AppState>>,
+    Json(report): Json<Report>,
+) -> (StatusCode, Json<Value>) {
+    if let Err(e) = validate(&report) {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": e })));
+    }
+    forward(&st, &st.dapr_url, &report).await
 }

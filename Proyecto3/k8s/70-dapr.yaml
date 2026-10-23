@@ -1,0 +1,99 @@
+# La clave debe coincidir con la del Secret rabbitmq-credentials (usuario:clave)
+apiVersion: v1
+kind: Secret
+metadata: { name: dapr-rabbitmq, namespace: munk8s }
+type: Opaque
+stringData:
+  connectionString: "amqp://munk8s:cambia-esta-clave@rabbitmq.munk8s.svc.cluster.local:5672"
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata: { name: rabbitmq-pubsub, namespace: munk8s }
+spec:
+  type: pubsub.rabbitmq
+  version: v1
+  metadata:
+    - name: connectionString
+      secretKeyRef: { name: dapr-rabbitmq, key: connectionString }
+    - { name: durable, value: "true" }
+    - { name: deletedWhenUnused, value: "false" }
+auth:
+  secretStore: kubernetes
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: dapr-subscriber, namespace: munk8s }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: dapr-subscriber } }
+  template:
+    metadata:
+      labels: { app: dapr-subscriber }
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "dapr-subscriber"
+        dapr.io/app-port: "8091"
+        dapr.io/app-protocol: "http"
+        dapr.io/sidecar-cpu-request: "50m"
+        dapr.io/sidecar-memory-request: "64Mi"
+        dapr.io/sidecar-cpu-limit: "300m"
+        dapr.io/sidecar-memory-limit: "192Mi"
+    spec:
+      containers:
+        - name: subscriber
+          image: zot.local:5000/munk8s/dapr-subscriber:v1
+          env:
+            - { name: VALKEY_ADDR, value: "valkey:6379" }
+          resources:
+            requests: { cpu: 100m, memory: 64Mi }
+            limits:   { cpu: 500m, memory: 256Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: dapr-publisher, namespace: munk8s }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: dapr-publisher } }
+  template:
+    metadata:
+      labels: { app: dapr-publisher }
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "dapr-publisher"
+        dapr.io/app-port: "8090"
+        dapr.io/app-protocol: "http"
+        dapr.io/sidecar-cpu-request: "50m"
+        dapr.io/sidecar-memory-request: "64Mi"
+        dapr.io/sidecar-cpu-limit: "300m"
+        dapr.io/sidecar-memory-limit: "192Mi"
+    spec:
+      containers:
+        - name: publisher
+          image: zot.local:5000/munk8s/dapr-publisher:v1
+          ports: [{ containerPort: 8090 }]
+          readinessProbe: { httpGet: { path: /health, port: 8090 }, periodSeconds: 5 }
+          resources:
+            requests: { cpu: 100m, memory: 64Mi }
+            limits:   { cpu: 500m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: dapr-publisher, namespace: munk8s }
+spec:
+  selector: { app: dapr-publisher }
+  ports: [{ port: 8090, targetPort: 8090 }]
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata: { name: dapr-route, namespace: munk8s }
+spec:
+  parentRefs: [{ name: munk8s-gw }]
+  rules:
+    - matches:
+        - path: { type: PathPrefix, value: /dapr-201800632 }
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path: { type: ReplacePrefixMatch, replacePrefixMatch: /dapr }
+      backendRefs:
+        - { name: rust-api, port: 8080 }

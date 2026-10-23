@@ -1,0 +1,9 @@
+FROM golang:1.24-alpine AS build
+WORKDIR /src
+COPY go.mod ./
+COPY subscriber ./subscriber
+RUN go mod tidy && CGO_ENABLED=0 go build -o /out/subscriber ./subscriber
+
+FROM alpine:3.20
+COPY --from=build /out/subscriber /app/subscriber
+CMD ["/app/subscriber"]

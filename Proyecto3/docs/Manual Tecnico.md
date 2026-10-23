@@ -91,7 +91,7 @@ kubectl wait --timeout=5m -n envoy-gateway-system deployment/envoy-gateway --for
 
 El chart instala los CRDs estándar de Gateway API (`GatewayClass`, `Gateway`, `HTTPRoute`).
 
-### 4.6 Construir y publicar las imágenes
+### Construir y publicar las imágenes
 
 ```powershell
 $REG = "localhost:5000/munk8s"
@@ -127,7 +127,7 @@ Comprueba el catálogo:
 curl.exe -k https://localhost:5000/v2/_catalog
 ```
 
-### 4.7 Despliegue del sistema
+### Despliegue del sistema
 
 El orden importa: RabbitMQ y el Operator deben existir antes de los servicios que dependen de ellos.
 

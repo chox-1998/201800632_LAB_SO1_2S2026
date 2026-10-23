@@ -62,3 +62,9 @@ Un cambio en el Custom Resource se propaga
 ![Comandos](imgs/C.png)
 Desaparecen el StatefulSet y el Service, porque el Operator desinstala la release. El PVC se queda. Después se restaura.
 El valor es el mismo que antes de borrar. Los datos persisten.
+
+### Fase 4
+#### Reconciliacion del Custom Resource
+![Comandos](imgs/21.png)
+#### Valkey se conecta a Grafana
+![Valkey y Grafana](imgs/22.png)
